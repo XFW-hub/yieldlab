@@ -1,0 +1,16 @@
+.idea
+.vscode
+__pycache__
+result
+node_modules
+.server*.log
+.server.pid
+.tunnel*.log
+.tunnel.pid
+curl_err.txt
+response.json
+response_models.json
+response_xgb.json
+analyze_check.json
+variable_out.json
+cloudflared.exe

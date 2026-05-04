@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>农业产量预测工作台</title>
+    <link rel="stylesheet" href="/static/styles.css?v=20260502-hide-stage-subtitle">
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand-block">
+          <div class="brand-mark">YL</div>
+          <div>
+            <strong>YieldLab</strong>
+            <span>农业产量预测工具</span>
+          </div>
+        </div>
+
+        <nav class="workflow-nav" aria-label="工作流步骤">
+          <button class="step-button active" data-step="train">
+            <span>01</span>
+            <strong id="datasetStepTitle">训练数据确认</strong>
+          </button>
+          <button class="step-button" data-step="statsTable">
+            <span>02</span>
+            <strong>统计表</strong>
+          </button>
+          <button class="step-button" data-step="boxplot">
+            <span>03</span>
+            <strong>箱线图</strong>
+          </button>
+          <button class="step-button" data-step="distribution">
+            <span>04</span>
+            <strong>变量诊断</strong>
+          </button>
+          <button class="step-button" data-step="outliers" data-env-scope="train">
+            <span>05</span>
+            <strong>清除异常值</strong>
+          </button>
+          <button class="step-button" data-step="correlation" data-env-scope="train">
+            <span>06</span>
+            <strong>相关性分析</strong>
+          </button>
+          <button class="step-button" data-step="trainModels" data-env-scope="train">
+            <span>07</span>
+            <strong>训练模型</strong>
+          </button>
+          <button class="step-button" data-step="predictData" data-env-scope="test">
+            <span>05</span>
+            <strong>预测数据校验</strong>
+          </button>
+          <button class="step-button" data-step="predict" data-env-scope="test">
+            <span>06</span>
+            <strong>生成预测</strong>
+          </button>
+        </nav>
+
+        <div class="sidebar-footer">
+          <span id="serverState">连接中</span>
+          <button id="downloadBtn" class="download-btn" disabled>下载产量预测结果</button>
+        </div>
+      </aside>
+
+      <main class="main">
+        <section class="control-bar">
+          <div class="segmented" id="environmentSwitch">
+            <button class="active" data-env="train">训练数据</button>
+            <button data-env="test">待预测数据</button>
+          </div>
+          <div class="top-status">
+            <span id="activeEnvironmentLabel">训练数据</span>
+            <strong id="activeDataRole">系统内置data</strong>
+          </div>
+        </section>
+
+        <section class="stage">
+          <header class="main-header">
+            <div>
+              <span class="eyebrow" id="stageKicker">Step 01</span>
+              <h1 id="stageTitle">训练数据确认</h1>
+              <p id="stageSubtitle">选择内置示例数据，或上传带 yield 列的新农业数据来重新训练模型。</p>
+            </div>
+            <div class="metric-strip">
+              <div>
+                <span>当前数据行数</span>
+                <strong id="currentDataRows">-</strong>
+              </div>
+              <div>
+                <span>当前数据列数</span>
+                <strong id="currentDataColumns">-</strong>
+              </div>
+            </div>
+          </header>
+
+          <section class="panel active" id="panelTrain">
+            <section class="data-inputs">
+              <label class="upload-tile" data-env-scope="train">
+                <input id="trainFileInput" type="file" accept=".csv">
+                <span>训练数据</span>
+                <strong id="trainFileName">系统内置data</strong>
+                <small>可使用内置示例；上传带 yield 列的新 CSV 会重新训练模型</small>
+              </label>
+              <label class="upload-tile accent" data-env-scope="test">
+                <input id="predictFileInput" type="file" accept=".csv">
+                <span>待预测数据</span>
+                <strong id="predictFileName">请上传待预测 CSV</strong>
+                <small>包含同样的生产指标即可，不需要 yield 列</small>
+              </label>
+            </section>
+            <div class="split-layout">
+              <article class="surface table-surface">
+                <div class="surface-head">
+                  <h2 id="datasetPreviewTitle">训练数据预览</h2>
+                  <button class="run-btn" id="datasetPreviewButton" data-run="train">载入训练数据</button>
+                </div>
+                <div id="datasetPreview" class="table-wrap empty-state">等待载入训练数据</div>
+              </article>
+              <article class="surface">
+                <div class="surface-head">
+                  <h2>预测所需字段</h2>
+                </div>
+                <div id="featureList" class="feature-list"></div>
+              </article>
+            </div>
+          </section>
+
+          <section class="panel" id="panelStatsTable">
+            <section class="stage-tools">
+              <div class="scope-note">
+                <span>统计范围</span>
+                <strong id="describeSourceLabel">训练数据全部数值变量</strong>
+              </div>
+            </section>
+            <article class="surface">
+              <div class="surface-head">
+                <h2 id="statsTableTitle">训练数据统计表</h2>
+                <button class="run-btn" data-run="statsTable">生成统计表</button>
+              </div>
+              <div id="basicStatsTable" class="table-wrap empty-state">当前步骤只生成统计表</div>
+            </article>
+          </section>
+
+          <section class="panel" id="panelBoxplot">
+            <section class="stage-tools">
+              <label class="variable-control">
+                <span>变量</span>
+                <select id="variableSelect"></select>
+              </label>
+              <div class="scope-note">
+                <span>数据来源</span>
+                <strong id="boxplotSourceLabel">训练数据</strong>
+              </div>
+            </section>
+            <article class="surface visual-surface">
+              <div class="surface-head">
+                <h2 id="boxplotTitle">训练数据箱线图</h2>
+                <button class="run-btn" data-run="boxplot">生成箱线图</button>
+              </div>
+              <figure class="chart-frame compact-chart">
+                <img id="boxplotImage" alt="箱线图">
+              </figure>
+            </article>
+          </section>
+
+          <section class="panel" id="panelDistribution">
+            <section class="stage-tools">
+              <label class="variable-control">
+                <span>变量</span>
+                <select id="variableSelectDistribution"></select>
+              </label>
+            </section>
+            <article class="surface visual-surface">
+              <div class="surface-head">
+                <h2>直方图 / 核密度图 / Q-Q 图</h2>
+                <button class="run-btn" data-run="distribution">生成分布诊断</button>
+              </div>
+              <figure class="chart-frame">
+                <img id="distributionImage" alt="分布图">
+              </figure>
+            </article>
+            <article class="surface">
+              <div class="surface-head">
+                <h2>正态性判断</h2>
+              </div>
+              <div id="normalityTable" class="table-wrap empty-state">等待生成</div>
+            </article>
+          </section>
+
+          <section class="panel" id="panelOutliers">
+            <article class="surface">
+              <div class="surface-head">
+                <h2>异常值清除摘要</h2>
+                <button class="run-btn" data-run="outliers">清除异常值</button>
+              </div>
+              <div id="outlierSummary" class="preprocess-summary"></div>
+              <div id="outlierList" class="table-wrap outlier-list empty-state">等待清除异常值</div>
+            </article>
+          </section>
+
+          <section class="panel" id="panelCorrelation">
+            <article class="surface visual-surface">
+              <div class="surface-head">
+                <h2>相关性热力图</h2>
+                <button class="run-btn" data-run="correlation">生成相关性分析</button>
+              </div>
+              <figure class="chart-frame">
+                <img id="correlationImage" alt="相关性热力图">
+              </figure>
+            </article>
+          </section>
+
+          <section class="panel" id="panelTrainModels">
+            <section class="model-config" id="modelConfigPanel">
+              <label class="select-label">
+                <span>训练模型</span>
+                <select id="modelChoice">
+                  <option value="both" selected>同时训练/输出 XGBoost 和 Stacking</option>
+                  <option value="stacking">Stacking 融合模型</option>
+                  <option value="xgboost">XGBoost 单模型</option>
+                </select>
+              </label>
+              <input id="runXgb" type="checkbox" checked hidden>
+              <input id="runStacking" type="checkbox" checked hidden>
+              <details>
+                <summary>高级参数</summary>
+                <div class="param-grid">
+                  <textarea id="xgbParams" spellcheck="false">{
+  "n_estimators": 300,
+  "max_depth": 4,
+  "learning_rate": 0.03,
+  "subsample": 0.9,
+  "colsample_bytree": 0.6,
+  "min_child_weight": 3,
+  "gamma": 1,
+  "reg_alpha": 0.01,
+  "reg_lambda": 1
+}</textarea>
+                  <textarea id="stackingParams" spellcheck="false">{
+  "cv": 5,
+  "ridge": { "alpha": 1.0 },
+  "estimators": {
+    "xgboost": {
+      "n_estimators": 300,
+      "max_depth": 4,
+      "learning_rate": 0.03,
+      "subsample": 0.9,
+      "colsample_bytree": 0.6,
+      "min_child_weight": 3,
+      "gamma": 1,
+      "reg_alpha": 0.01,
+      "reg_lambda": 1
+    },
+    "lightgbm": {
+      "n_estimators": 500,
+      "max_depth": 4,
+      "learning_rate": 0.03,
+      "num_leaves": 100,
+      "min_child_samples": 10,
+      "subsample": 0.9,
+      "colsample_bytree": 0.7,
+      "reg_alpha": 0.1,
+      "reg_lambda": 10
+    },
+    "random_forest": {
+      "n_estimators": 500,
+      "max_depth": 15,
+      "min_samples_split": 2,
+      "min_samples_leaf": 6,
+      "max_features": 0.6,
+      "bootstrap": true
+    }
+  }
+}</textarea>
+                </div>
+              </details>
+            </section>
+            <article class="surface result-surface">
+              <div class="surface-head">
+                <h2>模型训练</h2>
+                <button class="run-btn primary" data-run="trainModels">开始训练模型</button>
+              </div>
+              <div id="trainingResults" class="model-results">
+                <div class="placeholder-line"></div>
+                <div class="placeholder-line short"></div>
+              </div>
+            </article>
+          </section>
+
+          <section class="panel" id="panelPredictData">
+            <article class="surface">
+              <div class="surface-head">
+                <h2>字段检查清单</h2>
+                <button class="run-btn" data-run="predictData">校验待预测数据</button>
+              </div>
+              <div id="predictNormalizedPreview" class="table-wrap field-check-list empty-state">等待校验</div>
+            </article>
+          </section>
+
+          <section class="panel" id="panelPredict">
+            <section class="model-config compact">
+              <label class="select-label">
+                <span>预测模型</span>
+                <select id="modelChoicePredict">
+                  <option value="both" selected>同时输出 XGBoost 和 Stacking</option>
+                  <option value="stacking">Stacking 融合模型</option>
+                  <option value="xgboost">XGBoost 单模型</option>
+                </select>
+              </label>
+            </section>
+            <article class="surface result-surface">
+              <div class="surface-head">
+                <h2>产量预测结果</h2>
+                <button class="run-btn primary" data-run="predict">开始预测产量</button>
+              </div>
+              <div id="predictionTable" class="table-wrap empty-state">等待产量预测</div>
+            </article>
+            <article class="surface">
+              <div class="surface-head">
+                <h2>模型运行状态</h2>
+              </div>
+              <div id="modelResults" class="model-results">
+                <div class="placeholder-line"></div>
+                <div class="placeholder-line short"></div>
+              </div>
+            </article>
+          </section>
+        </section>
+
+        <p id="statusText" class="status-line">等待操作。</p>
+      </main>
+    </div>
+
+    <script src="/static/app.js?v=20260502-hide-stage-subtitle"></script>
+  </body>
+</html>

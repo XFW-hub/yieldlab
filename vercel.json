@@ -1,0 +1,16 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "version": 2,
+  "functions": {
+    "api/index.py": {
+      "maxDuration": 60,
+      "excludeFiles": "{__pycache__/**,.idea/**,.vscode/**,result/**,node_modules/**,*.log,curl_err.txt,response*.json,analyze_check.json,variable_out.json,cloudflared.exe}"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/api/index.py"
+    }
+  ]
+}
